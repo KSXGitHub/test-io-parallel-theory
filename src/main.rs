@@ -6,6 +6,7 @@ use std::{env::current_dir, fs, path::PathBuf};
 enum Cli {
     Serial,
     Parallel,
+    Mixed,
 }
 
 fn main() {
@@ -14,6 +15,7 @@ fn main() {
     match Cli::parse() {
         Cli::Serial => serial(dir),
         Cli::Parallel => parallel(dir),
+        Cli::Mixed => mixed(dir),
     }
 }
 
@@ -43,6 +45,10 @@ fn parallel(dir: PathBuf) {
         .into_par_iter()
         .map(data(dir, fib_parallel))
         .for_each(proc)
+}
+
+fn mixed(dir: PathBuf) {
+    (0..MAX).map(data(dir, fib_parallel)).for_each(proc)
 }
 
 fn fib_serial(num: u64) -> u64 {

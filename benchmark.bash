@@ -10,6 +10,7 @@ export PATH
 commands=(
   'test-io-parallel-theory serial'
   'test-io-parallel-theory parallel'
+  'test-io-parallel-theory mixed'
 )
 
 pretty-exec -- hyperfine --prepare 'rm -rf output' --warmup 3 "${commands[@]}"
