@@ -21,21 +21,6 @@ fn main() {
 
 const MAX: u64 = 40;
 
-fn data(dir: PathBuf, fib: impl Fn(u64) -> u64) -> impl Fn(u64) -> (PathBuf, String) {
-    move |num| {
-        let path = dir.join(format!("{num}.txt"));
-        let content = (0..num)
-            .map(|x| fib(x).to_string())
-            .collect::<Vec<_>>()
-            .join("\n");
-        (path, content)
-    }
-}
-
-fn proc((path, content): (PathBuf, String)) {
-    fs::write(path, content).expect("write a file");
-}
-
 fn serial(dir: PathBuf) {
     (0..MAX).map(data(dir, fib_serial)).for_each(proc)
 }
@@ -52,6 +37,21 @@ fn mixed(dir: PathBuf) {
         .into_par_iter()
         .map(data(dir, fib_serial))
         .for_each(proc)
+}
+
+fn data(dir: PathBuf, fib: impl Fn(u64) -> u64) -> impl Fn(u64) -> (PathBuf, String) {
+    move |num| {
+        let path = dir.join(format!("{num}.txt"));
+        let content = (0..num)
+            .map(|x| fib(x).to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        (path, content)
+    }
+}
+
+fn proc((path, content): (PathBuf, String)) {
+    fs::write(path, content).expect("write a file");
 }
 
 fn fib_serial(num: u64) -> u64 {
