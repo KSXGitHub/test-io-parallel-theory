@@ -19,18 +19,25 @@ fn main() {
 
 const MAX: u32 = 300;
 
-fn proc(dir: PathBuf) -> impl Fn(u32) {
+fn data(dir: PathBuf) -> impl Fn(u32) -> (PathBuf, String) {
     move |num| {
         let path = dir.join(format!("{num}.txt"));
-        let content = num.to_string();
-        fs::write(path, content).expect("write a file");
+        let content = (0..num)
+            .map(|x| x.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        (path, content)
     }
 }
 
+fn proc((path, content): (PathBuf, String)) {
+    fs::write(path, content).expect("write a file");
+}
+
 fn serial(dir: PathBuf) {
-    (0..MAX).for_each(proc(dir))
+    (0..MAX).map(data(dir)).for_each(proc)
 }
 
 fn parallel(dir: PathBuf) {
-    (0..MAX).into_par_iter().for_each(proc(dir))
+    (0..MAX).into_par_iter().map(data(dir)).for_each(proc)
 }
