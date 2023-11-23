@@ -17,7 +17,7 @@ fn main() {
     }
 }
 
-const MAX: u64 = 500;
+const MAX: u64 = 40;
 
 fn data(dir: PathBuf, fib: impl Fn(u64) -> u64) -> impl Fn(u64) -> (PathBuf, String) {
     move |num| {
