@@ -48,7 +48,10 @@ fn parallel(dir: PathBuf) {
 }
 
 fn mixed(dir: PathBuf) {
-    (0..MAX).map(data(dir, fib_parallel)).for_each(proc)
+    (0..MAX)
+        .into_par_iter()
+        .map(data(dir, fib_serial))
+        .for_each(proc)
 }
 
 fn fib_serial(num: u64) -> u64 {
