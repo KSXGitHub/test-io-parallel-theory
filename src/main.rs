@@ -1,45 +1,58 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use rayon::prelude::*;
 use std::{env::current_dir, fs, path::PathBuf};
 
 #[derive(Debug, Parser)]
-enum Cli {
+struct Cli {
+    #[clap(long)]
+    file: Order,
+    #[clap(long)]
+    cpu: Order,
+}
+
+#[derive(Debug, Clone, ValueEnum)]
+enum Order {
     Serial,
     Parallel,
-    Mixed,
 }
 
 fn main() {
     let dir = current_dir().expect("get current dir").join("output");
     fs::create_dir_all(&dir).expect("make sure output exists");
     match Cli::parse() {
-        Cli::Serial => serial(dir),
-        Cli::Parallel => parallel(dir),
-        Cli::Mixed => mixed(dir),
+        Cli {
+            file: Order::Serial,
+            cpu: Order::Serial,
+        } => file_serial(dir, fib_serial),
+        Cli {
+            file: Order::Serial,
+            cpu: Order::Parallel,
+        } => file_serial(dir, fib_parallel),
+        Cli {
+            file: Order::Parallel,
+            cpu: Order::Serial,
+        } => file_parallel(dir, fib_serial),
+        Cli {
+            file: Order::Parallel,
+            cpu: Order::Parallel,
+        } => file_parallel(dir, fib_parallel),
     }
 }
 
 const MAX: u64 = 40;
 
-fn serial(dir: PathBuf) {
-    (0..MAX).map(data(dir, fib_serial)).for_each(proc)
+fn file_serial(dir: PathBuf, fib: impl Fn(u64) -> u64 + Send + Sync) {
+    (0..MAX).map(data(dir, fib)).for_each(proc)
 }
 
-fn parallel(dir: PathBuf) {
-    (0..MAX)
-        .into_par_iter()
-        .map(data(dir, fib_parallel))
-        .for_each(proc)
+fn file_parallel(dir: PathBuf, fib: impl Fn(u64) -> u64 + Send + Sync) {
+    (0..MAX).into_par_iter().map(data(dir, fib)).for_each(proc)
 }
 
-fn mixed(dir: PathBuf) {
-    (0..MAX)
-        .into_par_iter()
-        .map(data(dir, fib_serial))
-        .for_each(proc)
-}
-
-fn data(dir: PathBuf, fib: impl Fn(u64) -> u64) -> impl Fn(u64) -> (PathBuf, String) {
+fn data(
+    dir: PathBuf,
+    fib: impl Fn(u64) -> u64 + Send + Sync,
+) -> impl Fn(u64) -> (PathBuf, String) + Send + Sync {
     move |num| {
         let path = dir.join(format!("{num}.txt"));
         let content = (0..num)
